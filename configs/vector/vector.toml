@@ -1,0 +1,50 @@
+[sources.docker]
+type = "docker_logs"
+
+[sources.my_host_metrics]
+type = "host_metrics"
+collectors = ["cpu", "memory", "load", "disk"]
+
+[transforms.parse_json]
+type = "remap"
+inputs = ["docker"]
+source = '''
+  if exists(.message) {
+    parsed, err = parse_json(.message)
+    if err == null {
+      . = merge!(., parsed)
+    }
+  }
+'''
+
+[transforms.filter_valid_logs]
+type = "filter"
+inputs = ["parse_json"]
+condition = 'exists(.service)'
+
+[sinks.clickhouse]
+type = "clickhouse"
+inputs = ["filter_valid_logs"]
+endpoint = "http://clickhouse:8123"
+database = "default"
+table = "logs"
+skip_unknown_fields = true
+auth.strategy = "basic"
+auth.user = "admin"
+auth.password = "SecretPassword123!"
+
+[transforms.logs_to_metrics]
+type = "log_to_metric"
+inputs = ["filter_valid_logs"]
+
+  [[transforms.logs_to_metrics.metrics]]
+  type = "counter"
+  field = "event"
+  name = "app_events_total"
+  namespace = "bank"
+  tags = { service = "{{service}}", event = "{{event}}" }
+
+[sinks.prometheus]
+type = "prometheus_exporter"
+inputs = ["logs_to_metrics", "my_host_metrics"]
+address = "0.0.0.0:9090"

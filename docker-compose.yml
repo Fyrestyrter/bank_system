@@ -1,0 +1,129 @@
+services:
+  generator:
+    build: ./apps/generator
+    ports:
+      - "8000:8000"
+    container_name: generator
+    depends_on:
+      - kafka
+    networks:
+      - bank-net
+
+  gwfi:
+    build: ./apps/gwfi
+    container_name: gwfi
+    depends_on:
+      - kafka
+    networks:
+      - bank-net
+
+  adapter:
+    build: ./apps/adapter
+    container_name: adapter
+    depends_on:
+      - kafka
+    networks:
+      - bank-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - bank-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - bank-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - bank-net
+
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+    ulimits:
+      nofile: 262144
+    volumes:
+      - ./configs/clickhouse/users.xml:/etc/clickhouse-server/users.d/admin_user.xml
+    networks:
+      - bank-net
+
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: vector
+    command: ["--config", "/etc/vector/vector.toml"]
+    volumes:
+      - ./configs/vector/vector.toml:/etc/vector/vector.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9099:9090"
+    depends_on:
+      - clickhouse
+      - kafka
+    networks:
+      - bank-net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - bank-net
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    depends_on:
+      - clickhouse
+      - prometheus
+    networks:
+      - bank-net
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter
+    command: [ "--kafka.server=kafka:9092" ]
+    ports:
+      - "9308:9308"
+    depends_on:
+      - kafka
+    networks:
+      - bank-net
+
+networks:
+  bank-net:
+    driver: bridge
