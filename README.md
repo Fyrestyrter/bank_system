@@ -31,11 +31,12 @@ docker-compose up -d --build
    Перейти по адресу http://localhost:3000 (log/pass: admin/admin)
    В левой меню выбираем Connections - Data Sources
    Добавляем два источника:
-   - **Prometheus**:
+   **Prometheus**:
     - URL: http://prometheus:9090
     - **Save & Test**.
+  
    
-   - **ClickHouse**:
+   **ClickHouse**:
     - Server Address: clickhouse
     - Server Port: 8123
     - Protocol: HTTP
