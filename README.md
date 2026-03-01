@@ -31,6 +31,7 @@ docker-compose up -d --build
    Перейти по адресу http://localhost:3000 (log/pass: admin/admin)
    В левой меню выбираем Connections - Data Sources
    Добавляем два источника:
+   
    **Prometheus**:
     - URL: http://prometheus:9090
     - **Save & Test**.
@@ -48,4 +49,4 @@ docker-compose up -d --build
    В левом меню выбираем Dashboards
    На странице справа жмем New - Import
    И загружаешь в него .json файл, который лежит в корневой папке проекта (dashboard.json)
- 6. В файле index.html изменяем ссылку на дашборд (чтобы ее найти, нужно справа сверху над дашбордом нажать на стрелочку рядом с кнопкой Share, выбрать Share intenally, внутри отключить тумблер shorten link и Copy link)
+ 7. В файле index.html изменяем ссылку на дашборд (чтобы ее найти, нужно справа сверху над дашбордом нажать на стрелочку рядом с кнопкой Share, выбрать Share intenally, внутри отключить тумблер shorten link и Copy link)
