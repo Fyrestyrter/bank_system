@@ -1,12 +1,27 @@
 import json
 import time
 import random
+import threading
 from kafka import KafkaConsumer
+
+def send_heartbeat():
+    while True:
+        print(json.dumps({
+            "timestamp": time.time(),
+            "service": "adapter",
+            "event": "heartbeat",
+            "level": "info"
+        }), flush=True)
+        time.sleep(5)
+
+threading.Thread(target=send_heartbeat, daemon=True).start()
 
 time.sleep(20)
 consumer = KafkaConsumer('validated_docs', bootstrap_servers=['kafka:9092'],
                          value_deserializer=lambda x: json.loads(x.decode('utf-8')),
                          group_id='adapter_group')
+
+print("Adapter started", flush=True)
 
 for message in consumer:
     doc = message.value

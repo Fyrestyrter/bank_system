@@ -1,6 +1,19 @@
 import json
 import time
+import threading
 from kafka import KafkaConsumer, KafkaProducer
+
+def send_heartbeat():
+    while True:
+        print(json.dumps({
+            "timestamp": time.time(),
+            "service": "gwfi",
+            "event": "heartbeat",
+            "level": "info"
+        }), flush=True)
+        time.sleep(5)
+
+threading.Thread(target=send_heartbeat, daemon=True).start()
 
 time.sleep(15)
 consumer = KafkaConsumer('raw_docs', bootstrap_servers=['kafka:9092'],
