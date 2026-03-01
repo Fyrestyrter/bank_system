@@ -34,6 +34,7 @@ docker-compose up -d --build
    - **Prometheus**:
     - URL: http://prometheus:9090
     - **Save & Test**.
+   
    - **ClickHouse**:
     - Server Address: clickhouse
     - Server Port: 8123
